@@ -7,10 +7,13 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 
+#define MAXDATASIZE 100 // max number of bytes we can get at once
+
 int main() {
     int status;
     struct addrinfo hints;
     struct addrinfo *servinfo;  // will point to the results
+
 
     //getaddrinfo = sets up the info we need to set up socket, can be used for other address too, ai_passive for ours 
 
@@ -97,6 +100,10 @@ int main() {
             exit(EXIT_FAILURE);
         }
 
+        //for client connection handling 
+        int numbytes;
+        char buf[MAXDATASIZE];
+
         for (int n = 0; n < nfds; ++n) {
             if (events[n].data.fd == listen_sock) {
 
@@ -126,8 +133,18 @@ int main() {
 
 
             } else {
+
+                printf("client has tried to send something");
+
                 //we only end up here if we are taking in data, epoll's whole purpose
-                
+                if (( numbytes = recv(listen_sock, buf, MAXDATASIZE-1, 0)) == -1) {
+                    perror("recv");
+                    exit(1);
+                }
+
+                printf("received: %s", buf);
+
+                //handle client sent stuff 
             }
 
         }

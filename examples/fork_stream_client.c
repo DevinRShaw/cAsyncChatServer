@@ -91,11 +91,19 @@ int main(int argc, char *argv[])
     buf[numbytes] = '\0';
 
     printf("client: received '%s'\n",buf);
+
+    //to avoid closing too early, this is added on top of the beej example file
     
-    //to avoid any type of 
+
     while(1){
-        sleep(5);
-        printf("listening for server...");
+        printf("write to the server\n");
+
+        char * message = malloc(MAXDATASIZE);
+
+        scanf("%s", message);
+
+        send(sockfd, "Hello, world!", 13, 0);
+
     }
 
     close(sockfd);
