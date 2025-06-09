@@ -91,6 +91,12 @@ int main(int argc, char *argv[])
     buf[numbytes] = '\0';
 
     printf("client: received '%s'\n",buf);
+    
+    //to avoid any type of 
+    while(1){
+        sleep(5);
+        printf("listening for server...");
+    }
 
     close(sockfd);
 
