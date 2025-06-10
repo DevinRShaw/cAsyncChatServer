@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/epoll.h>
 #include <fcntl.h>
+#include <errno.h>
 
 #define MAXDATASIZE 100 // max number of bytes we can get at once
 
@@ -73,6 +74,8 @@ int main() {
     int listen_sock, conn_sock, nfds, epollfd;
 
     listen_sock = sockfd;
+
+    fcntl(listen_sock, F_SETFL, O_NONBLOCK);
     
     struct sockaddr_storage their_addr; // connector's address information
     socklen_t sin_size = sizeof their_addr;
@@ -86,7 +89,7 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    ev.events = EPOLLIN;
+    ev.events = EPOLLIN | EPOLLET;
     ev.data.fd = listen_sock;
     if (epoll_ctl(epollfd, EPOLL_CTL_ADD, listen_sock, &ev) == -1) {
         perror("epoll_ctl: listen_sock");
@@ -133,18 +136,33 @@ int main() {
 
 
             } else {
+                //sholud definitely turn this into function handle_client(events[n].data.fd)
 
-                printf("client has tried to send something");
-
-                //we only end up here if we are taking in data, epoll's whole purpose
-                if (( numbytes = recv(listen_sock, buf, MAXDATASIZE-1, 0)) == -1) {
-                    perror("recv");
-                    exit(1);
-                }
-
-                printf("received: %s", buf);
-
-                //handle client sent stuff 
+                while (1) {
+                    numbytes = recv(events[n].data.fd, buf, sizeof(buf) - 1, 0);
+                    if (numbytes == -1) {
+                        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                            // No more data to read
+                            break;
+                        } else {
+                            perror("recv");
+                            close(events[n].data.fd);
+                            break;
+                        }
+                    } else {
+                        buf[numbytes] = '\0';
+                        printf("received: %s\n", buf);
+                        for (int i = 0; i < numbytes; i++) {
+                            printf("buf[%d] = '%c' (%d)\n", i, buf[i], (unsigned char)buf[i]);
+                        }
+                        
+                        if (strcmp(buf,"/quit\r\n") == 0){ 
+                            printf("client disconnected");
+                            close(events[n].data.fd);
+                        }
+                        break;
+                    }
+                } 
             }
 
         }
