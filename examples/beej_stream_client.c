@@ -111,16 +111,16 @@ int main(int argc, char *argv[])
 
         char * message = malloc(MAXDATASIZE - 1);
 
-        scanf("%s", message);
+        fgets(message, MAXDATASIZE, stdin);
         
         
         // must send until all bytes are sent out 
         while (bytes_sent < strlen(message)){
-            bytes_sent = send(sockfd, message, strlen(message) - bytes_sent, 0);
+            bytes_sent = send(sockfd, message + bytes_sent, strlen(message) - bytes_sent, 0);
         }
         
 
-        if (strcmp(message,"/quit") == 0){ 
+        if (strcmp(message,"/quit\n") == 0){ 
             free(message);
             break;
         }

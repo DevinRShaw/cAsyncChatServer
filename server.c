@@ -11,14 +11,13 @@
 #define MAXDATASIZE 100000 // max number of bytes we can get at once
 
 int main() {
+
+//getaddrinfo = sets up the info we need to set up socket, can be used for other address too, ai_passive for ours 
+
     int status;
     struct addrinfo hints;
-    struct addrinfo *servinfo;  // will point to the results
+    struct addrinfo *servinfo;  // will point to the results, a linked list of 1 or more struct addrinfos, many for different configs 
 
-
-    //getaddrinfo = sets up the info we need to set up socket, can be used for other address too, ai_passive for ours 
-
-    //this is a struct we use to as hint to pass into getaddrinfo setup 
 
     memset(&hints, 0, sizeof hints); // make sure the struct is empty
     hints.ai_family = AF_UNSPEC;     // don't care IPv4 or IPv6
@@ -30,43 +29,37 @@ int main() {
         exit(1);
     }
 
-    // servinfo now points to a linked list of 1 or more struct addrinfos
-        //different configs = different items 
 
 
-    //set the socket up to that now 
+//setting the socket up to that now, previous work ^ is useful here, handles a lot for us 
 
-
-    //could have hardcoded this, but above handles set up later too, ai passive key 
     int sockfd = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol);
-
 
     bind(sockfd, servinfo->ai_addr, servinfo->ai_addrlen);
 
-    freeaddrinfo(servinfo); // free the linked-list after done with servinfo 
+    freeaddrinfo(servinfo); // free the linked-list after done using servinfo to set up the server 
 
 
-    //char yes='1'; // Solaris people use this
+//lose the pesky "Address already in use" error message after restart 
     int yes=1;
-    // lose the pesky "Address already in use" error message
     if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
         perror("setsockopt");
         exit(1);
     } 
 
 
-    //we set up the addr info, set that to a socket, binded to a port, now we connect 
-    //this is for connecitng to a remote host not listening so we will save that for later 
-        //doesn't requrie bind since we connecting to their port 
-    //connect( sockfd, servinfo->ai_addr, servinfo->ai_addrlen); 
+//begin to listen on the socket
 
-    int backlog = 10; //number of connections that can wait in queue 
+    int backlog = 10; //number of connections that can wait in queue, not sure what should be for each use case 
 
 
     if (listen(sockfd, backlog) == -1) {
         perror("listen error");
         exit(1);
     } 
+
+
+//end of the beej tutorial socket setup, beginning of epoll 
 
 
     #define MAX_EVENTS 10
@@ -146,7 +139,6 @@ int main() {
                     memset(buf, 0, sizeof(buf));
                     //printf("in the recv loop: ");
                     numbytes = recv(events[n].data.fd, buf, sizeof(buf) - 1, 0);
-                    printf("%s \n", buf);
                     if (numbytes == -1) {
                         if (errno == EAGAIN || errno == EWOULDBLOCK) {
                             // No more data to read
@@ -162,6 +154,7 @@ int main() {
                     else if (numbytes == 0){
                         printf("connection closed\n");
                         close(events[n].data.fd);
+                        epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL); // Remove from epoll
                         break;
                     }
                 
@@ -171,11 +164,10 @@ int main() {
                     
                     
                     //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
-                    if (strcmp(buf,"/quit") == 0){ 
-                        printf("client disconnected via command");
-                        close(events[n].data.fd);
-                        epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL); // Remove from epoll
+                    if (strcmp(buf,"/quit\n") == 0){ 
+                        printf("client disconnected via command /quit ");
                     }
+                
                 
                 }
                     
