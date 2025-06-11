@@ -8,7 +8,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-#define MAXDATASIZE 100 // max number of bytes we can get at once
+#define MAXDATASIZE 100000 // max number of bytes we can get at once
 
 int main() {
     int status;
@@ -121,6 +121,7 @@ int main() {
 
                 //this was originally setnonblocking(sockfd)
                 fcntl(conn_sock, F_SETFL, O_NONBLOCK);
+                
                 ev.events = EPOLLIN | EPOLLET;
                 ev.data.fd = conn_sock;
                 if (epoll_ctl(epollfd, EPOLL_CTL_ADD, conn_sock,
@@ -149,18 +150,23 @@ int main() {
                             close(events[n].data.fd);
                             break;
                         }
-                    } else {
+                    } 
+                    
+                    else {
                         buf[numbytes] = '\0';
                         printf("received: %s\n", buf);
+                        
                         for (int i = 0; i < numbytes; i++) {
                             printf("buf[%d] = '%c' (%d)\n", i, buf[i], (unsigned char)buf[i]);
                         }
                         
-                        if (strcmp(buf,"/quit\r\n") == 0){ 
+                        //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
+                        if (strcmp(buf,"/quit   /0") == 0){ 
                             printf("client disconnected");
                             close(events[n].data.fd);
+                            epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL); // Remove from epoll
+                            break;
                         }
-                        break;
                     }
                 } 
             }
