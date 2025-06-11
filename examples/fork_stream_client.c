@@ -92,24 +92,41 @@ int main(int argc, char *argv[])
 
     printf("client: received '%s'\n",buf);
 
-    //this is added on top of the beej example file
+
+
+
+//----------------------------------------------------------------------------
+
+//the following is added on top of the beej example file to test epoll server
     
+    size_t bytes_sent;
 
     while(1){
+    
+        //we must check that entire message was sent using bytes_sent 
+        bytes_sent = 0;
+
         
         printf("write to the server: ");
 
         char * message = malloc(MAXDATASIZE - 1);
 
         scanf("%s", message);
-
-        send(sockfd, message, sizeof message, 0);
+        
+        
+        // must send until all bytes are sent out 
+        while (bytes_sent < strlen(message)){
+            bytes_sent = send(sockfd, message, strlen(message) - bytes_sent, 0);
+        }
+        
 
         if (strcmp(message,"/quit") == 0){ 
+            free(message);
             break;
         }
 
-        
+        free(message);
+
     }
     
     close(sockfd);

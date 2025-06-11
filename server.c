@@ -103,9 +103,7 @@ int main() {
             exit(EXIT_FAILURE);
         }
 
-        //for client connection handling 
-        int numbytes;
-        char buf[MAXDATASIZE];
+        
 
         for (int n = 0; n < nfds; ++n) {
             if (events[n].data.fd == listen_sock) {
@@ -137,38 +135,51 @@ int main() {
 
 
             } else {
+
                 //sholud definitely turn this into function handle_client(events[n].data.fd)
+                //for client connection handling 
+                int numbytes;
+                char buf[MAXDATASIZE];
+
 
                 while (1) {
+                    memset(buf, 0, sizeof(buf));
+                    //printf("in the recv loop: ");
                     numbytes = recv(events[n].data.fd, buf, sizeof(buf) - 1, 0);
+                    printf("%s \n", buf);
                     if (numbytes == -1) {
                         if (errno == EAGAIN || errno == EWOULDBLOCK) {
                             // No more data to read
                             break;
+
                         } else {
                             perror("recv");
                             close(events[n].data.fd);
                             break;
                         }
-                    } 
-                    
-                    else {
-                        buf[numbytes] = '\0';
-                        printf("received: %s\n", buf);
-                        
-                        for (int i = 0; i < numbytes; i++) {
-                            printf("buf[%d] = '%c' (%d)\n", i, buf[i], (unsigned char)buf[i]);
-                        }
-                        
-                        //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
-                        if (strcmp(buf,"/quit   /0") == 0){ 
-                            printf("client disconnected");
-                            close(events[n].data.fd);
-                            epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL); // Remove from epoll
-                            break;
-                        }
                     }
-                } 
+                    //to establish that a client has been disconnected 
+                    else if (numbytes == 0){
+                        printf("connection closed\n");
+                        close(events[n].data.fd);
+                        break;
+                    }
+                
+                
+                    //not sure if this all below  should be in the while loop?  
+                    printf("received: %s\n", buf);
+                    
+                    
+                    //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
+                    if (strcmp(buf,"/quit") == 0){ 
+                        printf("client disconnected via command");
+                        close(events[n].data.fd);
+                        epoll_ctl(epollfd, EPOLL_CTL_DEL, events[n].data.fd, NULL); // Remove from epoll
+                    }
+                
+                }
+                    
+               
             }
 
         }
