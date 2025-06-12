@@ -10,6 +10,55 @@
 
 #define MAXDATASIZE 100000 // max number of bytes we can get at once
 
+int handle_client(int client_fd, int epollfd ){
+    //sholud definitely turn this into function handle_client(events[n].data.fd)
+    //for client connection handling 
+    int numbytes;
+    char buf[MAXDATASIZE];
+
+
+    while (1) {
+
+        memset(buf, 0, sizeof(buf));
+        //printf("in the recv loop: ");
+        numbytes = recv(client_fd, buf, sizeof(buf) - 1, 0);
+        if (numbytes == -1) {
+            if (errno == EAGAIN || errno == EWOULDBLOCK) {
+                // No more data to read
+                return -1;
+                break;
+            } 
+            
+            else {
+                perror("recv");
+                close(client_fd);
+                return -1;
+                break;
+            }
+        }
+
+        //to establish that a client has been disconnected 
+        else if (numbytes == 0){
+            printf("connection closed\n");
+            close(client_fd);
+            epoll_ctl(epollfd, EPOLL_CTL_DEL, client_fd, NULL); // Remove from epoll
+            return 0;
+            break;
+        }
+    
+    
+        //not sure if this all below  should be in the while loop?  
+        printf("received: %s\n", buf);
+        
+        
+        //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
+        if (strcmp(buf,"/quit\n") == 0){ 
+            printf("client disconnected via command /quit ");
+        }
+    }
+}
+
+
 int main() {
 
 //getaddrinfo = sets up the info we need to set up socket, can be used for other address too, ai_passive for ours 
@@ -39,19 +88,17 @@ int main() {
 
     freeaddrinfo(servinfo); // free the linked-list after done using servinfo to set up the server 
 
-
-//lose the pesky "Address already in use" error message after restart 
-    int yes=1;
-    if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
-        perror("setsockopt");
-        exit(1);
-    } 
+    //lose the pesky "Address already in use" error message after restart 
+        int yes=1;
+        if (setsockopt(sockfd,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes) == -1) {
+            perror("setsockopt");
+            exit(1);
+        } 
 
 
 //begin to listen on the socket
 
     int backlog = 10; //number of connections that can wait in queue, not sure what should be for each use case 
-
 
     if (listen(sockfd, backlog) == -1) {
         perror("listen error");
@@ -103,8 +150,8 @@ int main() {
 
                 printf("server: waiting for connections...\n");
 
-                conn_sock = accept(listen_sock,
-                                    (struct sockaddr *) &their_addr, &sin_size);
+                conn_sock = accept(listen_sock, (struct sockaddr *) &their_addr, &sin_size);
+
                 if (conn_sock == -1) {
                     perror("accept");
                     exit(EXIT_FAILURE);
@@ -136,6 +183,7 @@ int main() {
 
 
                 while (1) {
+
                     memset(buf, 0, sizeof(buf));
                     //printf("in the recv loop: ");
                     numbytes = recv(events[n].data.fd, buf, sizeof(buf) - 1, 0);
@@ -167,11 +215,7 @@ int main() {
                     if (strcmp(buf,"/quit\n") == 0){ 
                         printf("client disconnected via command /quit ");
                     }
-                
-                
                 }
-                    
-               
             }
 
         }
