@@ -7,12 +7,12 @@
 #include <sys/epoll.h>
 #include <fcntl.h>
 #include <errno.h>
+#include "uthash/src/uthash.h"
 
 #define MAXDATASIZE 100000 // max number of bytes we can get at once
 
 int handle_client(int client_fd, int epollfd ){
-    //sholud definitely turn this into function handle_client(events[n].data.fd)
-    //for client connection handling 
+
     int numbytes;
     char buf[MAXDATASIZE];
 
@@ -105,7 +105,7 @@ int main() {
     } 
 
 
-//end of the beej tutorial socket setup, beginning of epoll 
+//end of the beej tutorial socket setup, beginning of epoll man page example usage 
 
 
     #define MAX_EVENTS 10
@@ -169,7 +169,7 @@ int main() {
 
                 printf("server: client connection configured\n");
 
-                send(conn_sock, "Hello, world!", 13, 0);
+                send(conn_sock, "who are you?", 11, 0);
 
 
 
