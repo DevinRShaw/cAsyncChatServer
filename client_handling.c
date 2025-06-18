@@ -117,12 +117,12 @@ int handle_client(int client_fd, int epollfd){
         welcome = is_client_new(client_fd);
 
         if (welcome == 1){ //if not on server yet 
-            printf("checking if %s is new client\n", buf);
             if (unique_username == 1){ //if username is unique 
                 add_user(client_fd, buf);
             }
             else {
-                printf("%s already taken", buf);
+                //this will not work without having a proper listening client, can be done with send and listen thread client side 
+                send(client_fd, "that username is taken", sizeof("that username is taken"), 0);
             }
         }
 

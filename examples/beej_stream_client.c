@@ -14,6 +14,8 @@
 
 #include <arpa/inet.h>
 
+#include <fcntl.h>
+
 #define PORT "3490" // the port client will be connecting to
 
 #define MAXDATASIZE 100000 // max number of bytes we can get at once
@@ -97,6 +99,8 @@ int main(int argc, char *argv[])
 
 //----------------------------------------------------------------------------
 
+    fcntl(sockfd, F_SETFL, O_NONBLOCK);
+
 //the following is added on top of the beej example file to test epoll server
     
     size_t bytes_sent;
@@ -126,6 +130,16 @@ int main(int argc, char *argv[])
         }
 
         free(message);
+
+        sleep(0.01); //added to get the response and not go to next loop without a proper response
+        //client will be need to be rewritten for a double threaded style of listen and input threading
+        if ((numbytes = recv(sockfd, buf, MAXDATASIZE-1, 0)) == -1) {
+            continue;
+        }
+
+        buf[numbytes] = '\0';
+
+        printf("client: received '%s'\n",buf);
 
     }
     
