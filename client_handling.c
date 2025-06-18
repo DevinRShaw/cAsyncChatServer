@@ -33,7 +33,9 @@ int is_client_new(int user_id, char *name) {
     if (s == NULL) {
         return 0; //they are not on server so you return 0;
     }
-    
+
+    //will always be 0 until you do the add user 
+
     return 1; //if present on the server then just return 1 to say yes 
 }
 
@@ -78,7 +80,6 @@ int handle_client(int client_fd, int epollfd){
         //check for user 
         welcome = is_client_new(client_fd, buf);
 
-        
 
         //not sure if this all below  should be in the while loop?  
         printf("received: %s\nnew: %d", buf, welcome);
