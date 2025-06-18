@@ -19,13 +19,22 @@ struct client_lookup {
     UT_hash_handle hh2;         //bidrectionally hashable on both
 };
 
-struct client_lookup *users = NULL; //global variable 
+struct client_lookup *users_id = NULL; //global variable <client, name>
+struct client_lookup *users_name = NULL; //global variable <name, client> 
 
 
 //pass in the hash table as a pointer here to update in the function 
 int is_client_new(int user_id, char *name) {
    
+    struct client_lookup *s;
 
+    //is the client on the server already
+    HASH_FIND(hh1, users_id, &user_id, sizeof(user_id), s);
+    if (s == NULL) {
+        return 0; //they are not on server so you return 0;
+    }
+    
+    return 1; //if present on the server then just return 1 to say yes 
 }
 
 
@@ -72,7 +81,7 @@ int handle_client(int client_fd, int epollfd){
         
 
         //not sure if this all below  should be in the while loop?  
-        printf("received: %s\n", buf);
+        printf("received: %s\nnew: %d", buf, welcome);
         
         
         //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
