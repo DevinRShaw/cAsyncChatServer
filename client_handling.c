@@ -47,6 +47,9 @@ int handle_client(int client_fd, int epollfd){
     char buf[MAXDATASIZE];
     int welcome;
 
+    //check for user 
+    welcome = is_client_new(client_fd, buf);
+
     while (1) {
 
         memset(buf, 0, sizeof(buf));
@@ -76,13 +79,11 @@ int handle_client(int client_fd, int epollfd){
             break;
         }
 
-    
-        //check for user 
-        welcome = is_client_new(client_fd, buf);
+
 
 
         //not sure if this all below  should be in the while loop?  
-        printf("received: %s\nnew: %d", buf, welcome);
+        printf("received: %s\nnew: %d\n", buf, welcome);
         
         
         //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
