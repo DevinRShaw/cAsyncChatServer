@@ -6,6 +6,7 @@
         "errno.h": "c",
         "uthash.h": "c",
         "stdio.h": "c",
-        "typeinfo": "c"
+        "typeinfo": "c",
+        "cstdlib": "c"
     }
 }

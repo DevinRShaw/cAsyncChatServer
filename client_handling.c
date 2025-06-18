@@ -13,7 +13,7 @@
 #define MAXDATASIZE 100000 // max number of bytes we can get at once
 
 struct client_lookup {
-    char name[10];             /* key (string is WITHIN the structure) */
+    char name[MAXDATASIZE];             /* key (string is WITHIN the structure) */
     int id;
     UT_hash_handle hh1;         /* makes this structure hashable */
     UT_hash_handle hh2;         //bidrectionally hashable on both
@@ -42,11 +42,14 @@ int is_client_new(int user_id) {
 //make sure the string look up is correct 
 
 int is_username_unique(char* name){
+    //change to the type of string in the struct 
+    char copy_name[MAXDATASIZE];
+    strcpy(copy_name, name);
+
+
     struct client_lookup *s;
 
-    //is the client on the server already
-    printf("searching for user\n");
-    HASH_FIND(hh2, users_name, &name, sizeof(name), s);
+    HASH_FIND(hh2, users_name, &copy_name, strlen(copy_name), s);
     if (s == NULL) {
         return 1; //they are not unique so you return 0;
     }
@@ -54,11 +57,16 @@ int is_username_unique(char* name){
     return 0; //if not unique then just return 1 to say yes 
 }
 
+//the username part of this is not working
 void add_user(int user_id, char* name){
-    
+    //change to the type of string in the struct 
+    char copy_name[MAXDATASIZE];
+    strcpy(copy_name, name);
+
+
     struct client_lookup *s = malloc(sizeof *s);
     s->id = user_id;
-    strcpy(s->name, name);
+    strcpy(s->name, copy_name);
 
     HASH_ADD(hh1, users_id, id, sizeof(int), s);
     HASH_ADD(hh2, users_name, name, strlen(s->name), s);
@@ -120,8 +128,8 @@ int handle_client(int client_fd, int epollfd){
 
 
         //the buffer needs newline to print to terminal, line based buffer 
-        printf("received: %s\nnew: %d\n", buf, welcome);
-        
+        printf("received: %s\nnew client: %d\nnew username: %d\n", buf, welcome, unique_username);
+
         
         //need to fix the string comparison, do after we figure out the received: looping error on disconnect 
         if (strcmp(buf,"/quit\n") == 0){ 
