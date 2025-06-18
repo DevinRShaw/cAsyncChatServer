@@ -5,6 +5,7 @@
         "in.h": "c",
         "errno.h": "c",
         "uthash.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "typeinfo": "c"
     }
 }
